@@ -32,19 +32,10 @@ namespace MQTT_LED_Controller
             client = new MqttClient("127.0.0.1");
 
             client.MqttMsgPublishReceived += Client_MqttMsgPublishReceived;
-            client.ConnectionClosed += Client_ConnectionClosed;
-
-            
+            client.ConnectionClosed += Client_ConnectionClosed;            
         }
 
-        private void Client_ConnectionClosed(object sender, EventArgs e)
-        {
-            TxtDebug.Dispatcher.Invoke(() =>
-            {
-                this.TxtDebug.Text = "MQTT connection closed..";
-            });
-        }
-
+        #region Window event methods
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
             client.Connect("Core_LED_Controller" + Guid.NewGuid().ToString());
@@ -64,6 +55,8 @@ namespace MQTT_LED_Controller
                 client.ConnectionClosed -= Client_ConnectionClosed;
             }
         }
+        #endregion
+
 
         #region MQTT event methods
         private void Client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
@@ -74,7 +67,27 @@ namespace MQTT_LED_Controller
             });
             
         }
+
+        private void Client_ConnectionClosed(object sender, EventArgs e)
+        {
+            TxtDebug.Dispatcher.Invoke(() =>
+            {
+                this.TxtDebug.Text = "MQTT connection closed..";
+            });
+        }
         #endregion
+
+        #region UI events
+        private void BtnTest_Click(object sender, RoutedEventArgs e)
+        {
+            if (client.IsConnected)
+            {
+                string message = "{\"Red\":99,\"Blue\":255,\"Green\":18}";
+                client.Publish("LED/0/Manual/Color", Encoding.UTF8.GetBytes(message));
+            }
+        }
+        #endregion
+
 
     }
 }

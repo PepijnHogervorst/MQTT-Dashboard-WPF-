@@ -12,6 +12,8 @@
                    HorizontalAlignment="Center" VerticalAlignment="Center"
                    Text="Status MQTT" 
                    TextWrapping="Wrap"/>
+        <Button x:Name="BtnTest" Content="Publish manual color" HorizontalAlignment="Center" Margin="0,230,0,0" VerticalAlignment="Top"
+                Click="BtnTest_Click"/>
 
     </Grid>
 </Window>
