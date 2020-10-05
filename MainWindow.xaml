@@ -5,8 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MQTT_LED_Controller"
         mc:Ignorable="d"
+        Loaded="Window_Loaded" Closed="Window_Closed"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
+        <TextBlock x:Name="TxtDebug" 
+                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                   Text="Status MQTT" 
+                   TextWrapping="Wrap"/>
 
     </Grid>
 </Window>
