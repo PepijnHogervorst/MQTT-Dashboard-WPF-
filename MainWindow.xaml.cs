@@ -1,7 +1,12 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,9 +29,12 @@ namespace MQTT_LED_Controller
     {
         private readonly MqttClient client;
         private static readonly string[] topics = new string[] { "LED/+/Status" };
+        private readonly Regex RegexNumeric = new Regex(@"^\d$");
+        private readonly ObservableCollection<Device> devices = new ObservableCollection<Device>();
         public MainWindow()
         {
             InitializeComponent();
+            LvAliveDevices.ItemsSource = devices;
 
             // Init MQTT client
             client = new MqttClient("127.0.0.1");
@@ -61,11 +69,8 @@ namespace MQTT_LED_Controller
         #region MQTT event methods
         private void Client_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
         {
-            TxtDebug.Dispatcher.Invoke(() =>
-            {
-                this.TxtDebug.Text = $"Topic: {e.Topic} \tMessage: {Encoding.UTF8.GetString(e.Message)}";
-            });
-            
+            // Decypher message
+            DecypherMessage(e.Topic, Encoding.UTF8.GetString(e.Message));
         }
 
         private void Client_ConnectionClosed(object sender, EventArgs e)
@@ -88,6 +93,128 @@ namespace MQTT_LED_Controller
         }
         #endregion
 
+        #region Private methods
+        private void DecypherMessage(string topic, string message)
+        {
+            JObject jObject = JObject.Parse(message);
 
+            // Check if it is status message
+            if (topic.StartsWith("LED/") && topic.EndsWith("/Status"))
+            {
+                string[] parts = topic.Split('/');
+                
+                if (parts.Length < 3) return;
+
+                // Check if ID is numeric
+                if (!RegexNumeric.IsMatch(parts[1]))
+                {
+                    // Return if LED identifier is not numeric
+                    return;
+                }
+
+                int id = Convert.ToInt16(parts[1]);
+
+                string deviceType = (string)jObject["Type"];
+
+                
+                bool exists = false;
+                foreach (var device in this.devices)
+                {
+                    if (device.ID == id)
+                    {
+                        exists = true;
+                        device.Timestamp = DateTimeOffset.Now;
+                        
+                        break;
+                    }
+                }
+
+                if (!exists)
+                {
+                    var device = new Device();
+                    device.ID = id;
+                    device.Type = deviceType;
+                    device.Timestamp = DateTimeOffset.Now;
+
+                    LvAliveDevices.Dispatcher.Invoke(() =>
+                    {
+                        devices.Add(device);
+                    });
+                }
+            }
+
+
+            // Debug
+            TxtDebug.Dispatcher.Invoke(() =>
+            {
+                this.TxtDebug.Text = $"Topic: {topic} \tMessage: {message}";
+            });
+        }
+        #endregion
     }
+
+    public class Device : INotifyPropertyChanged
+    {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private string _type;
+        public string Type
+        {
+            get { return _type; }
+            set
+            {
+                if (value != _type)
+                {
+                    _type = value;
+                    OnPropertyChanged("Type");
+                }
+            }
+        }
+
+        private int _id;
+        public int ID {
+            get { return _id; }
+            set
+            {
+                if (value != _id)
+                {
+                    _id = value;
+                    OnPropertyChanged("ID");
+                }
+            }
+        }
+
+        private DateTimeOffset _timestamp;
+        public DateTimeOffset Timestamp 
+        {
+            get { return _timestamp; }
+            set
+            {
+                if (value != _timestamp)
+                {
+                    _timestamp = value;
+                    OnPropertyChanged("Timestamp");
+                }
+            }
+        }
+
+        public Device()
+        {
+
+        }
+        public Device(int id, string type)
+        {
+            ID = id;
+            Type = type;
+            Timestamp = DateTimeOffset.Now;
+        }
+
+        protected virtual void OnPropertyChanged(string propertyName)
+        {
+            var handler = PropertyChanged;
+            if (handler != null)
+                handler(this, new PropertyChangedEventArgs(propertyName));
+        }
+    }
+
 }
