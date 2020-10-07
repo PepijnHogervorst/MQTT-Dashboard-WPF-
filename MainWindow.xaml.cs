@@ -96,7 +96,16 @@ namespace MQTT_LED_Controller
         #region Private methods
         private void DecypherMessage(string topic, string message)
         {
-            JObject jObject = JObject.Parse(message);
+            JObject jObject;
+
+            try
+            {
+                jObject = JObject.Parse(message);
+            }
+            catch (Exception)
+            {
+                return;
+            }
 
             // Check if it is status message
             if (topic.StartsWith("LED/") && topic.EndsWith("/Status"))
