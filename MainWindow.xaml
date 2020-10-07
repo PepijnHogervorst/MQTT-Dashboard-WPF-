@@ -14,7 +14,7 @@
         Background="{DynamicResource MaterialDesignPaper}"
         FontFamily="{DynamicResource MaterialDesignFont}"
         Loaded="Window_Loaded" Closed="Window_Closed"
-        Title="MainWindow" Height="450" Width="1000">
+        Title="MQTT Dashboard" Height="450" Width="1000">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
